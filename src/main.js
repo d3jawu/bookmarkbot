@@ -40,7 +40,7 @@ client.on(
   /**
    *
    * @param {string} roomId
-   * @param {Record<string, unknown>} event
+   * @param {Record<string, any>} event
    */
   async (roomId, event) => {
     if (!ACTIVE_ROOMS.includes(roomId)) {
@@ -50,15 +50,26 @@ client.on(
     console.log(roomId);
     console.log(event);
 
+    // Create bookmark
     if (
       event.type === "m.room.message" &&
       !!event?.content?.body &&
       typeof event?.content?.body === "string" &&
       event.content.body.startsWith("🔖")
     ) {
-      // Create bookmark
-      console.log("bookmarking:");
-      console.log(event);
+      /** @type {string} */
+      let senderName = event.sender;
+      try {
+        const profile = await client.getUserProfile(event.sender);
+        senderName = profile.displayname;
+      } catch (e) {
+        console.log(`Warning: couldn't get display name for ${event.sender}`);
+      }
+
+      storage.add(event.event_id, {
+        excerpt: event.content.body.replace("🔖", "").trim(),
+        sender: senderName,
+      });
 
       client.sendEvent(roomId, "m.reaction", {
         "m.relates_to": {
@@ -70,5 +81,16 @@ client.on(
     }
   }
 );
+
+/**
+ * @param {string} roomId
+ * @param {string} eventId
+ * @returns {string}
+ */
+const messageUrl = (roomId, eventId) =>
+  `https://matrix.to/#/${roomId}:${HOMESERVER_URL.replace(
+    "https://",
+    ""
+  ).replace("http://", "")}/${eventId}`;
 
 client.start();

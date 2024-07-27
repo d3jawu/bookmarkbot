@@ -1,6 +1,7 @@
 # Bot data
 .matrix_storage.json
 .crypto_store/
+bookmarks.json
 
 # Environment
 .env

@@ -1,13 +1,14 @@
 /** @typedef {import("fs/promises").FileHandle} FileHandle */
 /** @typedef {import("./types.js").Bookmark} Bookmark */
 
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, statSync } from "fs";
 
-// Yes, this reads and writes the entire file to disk with every interaction. It's fine
+// Yes, this reads and writes the entire file to disk with every interaction. It's fine, it's fine
 export class Storage {
   /** @type {string} */
   path;
 
+  // Data is keyed by event ID for easy deletion.
   /** @type {Record<string, Bookmark>} */
   data;
 
@@ -17,6 +18,7 @@ export class Storage {
    */
   constructor(path) {
     this.path = path;
+    // TODO create if doesn't exist
     this.data = JSON.parse(readFileSync(path).toString());
   }
 
@@ -28,18 +30,15 @@ export class Storage {
    */
   add(eventId, bookmark) {
     this.data[eventId] = bookmark;
+    writeFileSync(this.path, JSON.stringify(this.data));
   }
 
   // List all bookmarks.
   /**
-   * @returns {string}
+   * @returns {Bookmark[]}
    */
   list() {
-    return Object.entries(this.data).reduce(
-      (acc, [eventId, { excerpt, sender }]) =>
-        `${acc}\n- ${sender}: ${excerpt}`,
-      ""
-    );
+    return Object.values(this.data);
   }
 
   // Clear a bookmark (mark it as done and remove it from the list)
@@ -51,5 +50,6 @@ export class Storage {
     if (eventId in this.data) {
       delete this.data[eventId];
     }
+    writeFileSync(this.path, JSON.stringify(this.data));
   }
 }
