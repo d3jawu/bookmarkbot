@@ -1,0 +1,16 @@
+{
+  "name": "bookmarkbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "matrix-bot-sdk": "^0.7.1"
+  },
+  "type": "module"
+}

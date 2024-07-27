@@ -1,0 +1,8 @@
+# Bot data
+.matrix_storage.json
+.crypto_store/
+
+# Environment
+.env
+
+node_modules/
