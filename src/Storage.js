@@ -3,6 +3,13 @@
 
 import { readFileSync, writeFileSync, statSync } from "fs";
 
+/**
+ * @param {string} roomId
+ * @param {string} eventId
+ * @returns {string}
+ */
+const bookmarkKey = (roomId, eventId) => `${roomId}|${eventId}`;
+
 // Yes, this reads and writes the entire file to disk with every interaction. It's fine, it's fine
 export class Storage {
   /** @type {string} */
@@ -24,32 +31,38 @@ export class Storage {
 
   // Add a bookmark to storage.
   /**
-   *
+   * @param {string} roomId
    * @param {string} eventId
    * @param {Bookmark} bookmark
    */
-  add(eventId, bookmark) {
-    // TODO use room id in key as well (event id's are not globally unique)
-    this.data[eventId] = bookmark;
+  add(roomId, eventId, bookmark) {
+    this.data[bookmarkKey(roomId, eventId)] = bookmark;
     writeFileSync(this.path, JSON.stringify(this.data));
   }
 
   // List all bookmarks.
   /**
-   * @returns {Bookmark[]}
+   * @returns {(Bookmark & {
+   *   event_id: string
+   *   room_id: string
+   * })[]}
    */
   list() {
-    return Object.values(this.data);
+    return Object.entries(this.data).map(([key, bookmark]) => ({
+      room_id: key.split("|")[0] || "",
+      event_id: key.split("|")[1] || "",
+      ...bookmark,
+    }));
   }
 
   // Clear a bookmark (mark it as done and remove it from the list)
   /**
-   *
+   * @param {string} roomId
    * @param {string} eventId
    */
-  clear(eventId) {
-    if (eventId in this.data) {
-      delete this.data[eventId];
+  clear(roomId, eventId) {
+    if (bookmarkKey(roomId, eventId) in this.data) {
+      delete this.data[bookmarkKey(roomId, eventId)];
     }
     writeFileSync(this.path, JSON.stringify(this.data));
   }

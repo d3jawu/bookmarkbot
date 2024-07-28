@@ -64,7 +64,7 @@ client.on(
         console.log(`Warning: couldn't get display name for ${event.sender}`);
       }
 
-      storage.add(event.event_id, {
+      storage.add(roomId, event.event_id, {
         excerpt: event.content.body.replace("🔖", "").trim(),
         sender: senderName,
       });
@@ -83,7 +83,7 @@ client.on(
       event.type === "m.reaction" &&
       ["☑️", "✅", "✔️"].includes(event?.content?.["m.relates_to"]?.key)
     ) {
-      storage.clear(event?.content?.["m.relates_to"]?.event_id);
+      storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
     }
 
     // List bookmarks
@@ -92,8 +92,17 @@ client.on(
       event?.content?.body?.startsWith("📑")
     ) {
       const bookmarks = storage.list();
-
-      console.log(bookmarks);
+      client.sendHtmlText(
+        roomId,
+        `<ul>
+        ${bookmarks
+          .map(
+            ({ excerpt, room_id, event_id }) =>
+              `<li>${excerpt} (${messageUrl(room_id, event_id)})</li>`
+          )
+          .join("\n")}
+        </ul>`
+      );
     }
   }
 );
@@ -104,9 +113,6 @@ client.on(
  * @returns {string}
  */
 const messageUrl = (roomId, eventId) =>
-  `https://matrix.to/#/${roomId}:${HOMESERVER_URL.replace(
-    "https://",
-    ""
-  ).replace("http://", "")}/${eventId}`;
+  `https://matrix.to/#/${roomId}/${eventId}`;
 
 client.start();
