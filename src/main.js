@@ -53,9 +53,7 @@ client.on(
     // Create bookmark
     if (
       event.type === "m.room.message" &&
-      !!event?.content?.body &&
-      typeof event?.content?.body === "string" &&
-      event.content.body.startsWith("🔖")
+      event?.content?.body?.startsWith("🔖")
     ) {
       /** @type {string} */
       let senderName = event.sender;
@@ -75,9 +73,27 @@ client.on(
         "m.relates_to": {
           rel_type: "m.annotation",
           event_id: event.event_id,
-          key: "👀",
+          key: "🆕",
         },
       });
+    }
+
+    // Clear bookmark
+    if (
+      event.type === "m.reaction" &&
+      ["☑️", "✅", "✔️"].includes(event?.content?.["m.relates_to"]?.key)
+    ) {
+      storage.clear(event?.content?.["m.relates_to"]?.event_id);
+    }
+
+    // List bookmarks
+    if (
+      event.type === "m.room.message" &&
+      event?.content?.body?.startsWith("📑")
+    ) {
+      const bookmarks = storage.list();
+
+      console.log(bookmarks);
     }
   }
 );

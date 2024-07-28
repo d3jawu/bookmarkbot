@@ -29,6 +29,7 @@ export class Storage {
    * @param {Bookmark} bookmark
    */
   add(eventId, bookmark) {
+    // TODO use room id in key as well (event id's are not globally unique)
     this.data[eventId] = bookmark;
     writeFileSync(this.path, JSON.stringify(this.data));
   }
