@@ -1,7 +1,7 @@
 /** @typedef {import("fs/promises").FileHandle} FileHandle */
 /** @typedef {import("./types.js").Bookmark} Bookmark */
 
-import { readFileSync, writeFileSync, statSync } from "fs";
+import { readFileSync, writeFileSync, statSync, existsSync } from "fs";
 
 /**
  * @param {string} roomId
@@ -25,7 +25,10 @@ export class Storage {
    */
   constructor(path) {
     this.path = path;
-    // TODO create if doesn't exist
+    if (!existsSync(path)) {
+      writeFileSync(path, "{}");
+    }
+
     this.data = JSON.parse(readFileSync(path).toString());
   }
 
