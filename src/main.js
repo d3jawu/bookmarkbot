@@ -87,21 +87,20 @@ client.on(
     }
 
     // List bookmarks
-    if (
-      event.type === "m.room.message" &&
-      event?.content?.body?.startsWith("📑")
-    ) {
+    if (event.type === "m.room.message" && event?.content?.body === "📑") {
       const bookmarks = storage.list();
       client.sendHtmlText(
         roomId,
-        `<ul>
+        bookmarks.length !== 0
+          ? `<b>📚️ Current bookmarks 📚️</b><br/><ul>
         ${bookmarks
           .map(
             ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} (${messageUrl(room_id, event_id)})</li>`
+              `<li>${excerpt} 👉️${messageUrl(room_id, event_id)}</li>`
           )
           .join("\n")}
         </ul>`
+          : `There are no bookmarks! :3`
       );
     }
   }
