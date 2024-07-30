@@ -43,56 +43,54 @@ client.on(
    * @param {Record<string, any>} event
    */
   async (roomId, event) => {
-    if (!ACTIVE_ROOMS.includes(roomId)) {
-      return;
-    }
-
-    console.log(roomId);
-    console.log(event);
-
-    // Create bookmark
-    if (
-      event.type === "m.room.message" &&
-      event?.content?.body?.startsWith("🔖")
-    ) {
-      /** @type {string} */
-      let senderName = event.sender;
-      try {
-        const profile = await client.getUserProfile(event.sender);
-        senderName = profile.displayname;
-      } catch (e) {
-        console.log(`Warning: couldn't get display name for ${event.sender}`);
+    try {
+      if (!ACTIVE_ROOMS.includes(roomId)) {
+        return;
       }
 
-      storage.add(roomId, event.event_id, {
-        excerpt: event.content.body.replace("🔖", "").trim(),
-        sender: senderName,
-      });
+      // Create bookmark
+      if (
+        event.type === "m.room.message" &&
+        event?.content?.body?.startsWith("🔖")
+      ) {
+        /** @type {string} */
+        let senderName = event.sender;
+        try {
+          const profile = await client.getUserProfile(event.sender);
+          senderName = profile.displayname;
+        } catch (e) {
+          console.log(`Warning: couldn't get display name for ${event.sender}`);
+        }
 
-      client.sendEvent(roomId, "m.reaction", {
-        "m.relates_to": {
-          rel_type: "m.annotation",
-          event_id: event.event_id,
-          key: "🆕",
-        },
-      });
-    }
+        storage.add(roomId, event.event_id, {
+          excerpt: event.content.body.replace("🔖", "").trim(),
+          sender: senderName,
+        });
 
-    // Clear bookmark
-    if (
-      event.type === "m.reaction" &&
-      ["☑️", "✅", "✔️"].includes(event?.content?.["m.relates_to"]?.key)
-    ) {
-      storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
-    }
+        client.sendEvent(roomId, "m.reaction", {
+          "m.relates_to": {
+            rel_type: "m.annotation",
+            event_id: event.event_id,
+            key: "🆗",
+          },
+        });
+      }
 
-    // List bookmarks
-    if (event.type === "m.room.message" && event?.content?.body === "📑") {
-      const bookmarks = storage.list();
-      client.sendHtmlText(
-        roomId,
-        bookmarks.length !== 0
-          ? `<b>📚️ Current bookmarks 📚️</b><br/><ul>
+      // Clear bookmark
+      if (
+        event.type === "m.reaction" &&
+        ["☑️", "✅", "✔️"].includes(event?.content?.["m.relates_to"]?.key)
+      ) {
+        storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
+      }
+
+      // List bookmarks
+      if (event.type === "m.room.message" && event?.content?.body === "📑") {
+        const bookmarks = storage.list();
+        client.sendHtmlText(
+          roomId,
+          bookmarks.length !== 0
+            ? `<b>📚️ Current bookmarks 📚️</b><br/><ul>
         ${bookmarks
           .map(
             ({ excerpt, room_id, event_id }) =>
@@ -100,8 +98,11 @@ client.on(
           )
           .join("\n")}
         </ul>`
-          : `There are no bookmarks! :3`
-      );
+            : `There are no bookmarks! :3`
+        );
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 );
