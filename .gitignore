@@ -4,6 +4,6 @@
 bookmarks.json
 
 # Environment
-.env
+config.json
 
 node_modules/

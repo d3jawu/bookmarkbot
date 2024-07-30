@@ -9,8 +9,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.4.5",
     "matrix-bot-sdk": "^0.7.1"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
 }

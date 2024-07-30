@@ -1,0 +1,8 @@
+{
+  "HOMESERVER_URL": "Matrix home server URL",
+  "ACCESS_TOKEN": "Access token, obtained from scripts/getToken.js",
+  "ACTIVE_ROOMS": "Comma-separated list of room ids",
+  "BOOKMARK_STORAGE_PATH": "Path to JSON file for bookmarks",
+  "MATRIX_STORAGE_PATH": "Path to JSON file used for Matrix bot metadata",
+  "CRYPTO_STORE_PATH": "Path to directory used for Matrix cryptography metadata"
+}

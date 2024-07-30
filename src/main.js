@@ -1,4 +1,4 @@
-import "dotenv/config";
+import { default as config } from "../config.json" with { type: "json" };
 
 import {
   MatrixClient,
@@ -8,31 +8,31 @@ import {
 
 import { Storage } from "./Storage.js";
 
-const { HOMESERVER_URL, ACCESS_TOKEN } = process.env;
-if (!HOMESERVER_URL) {
-  throw new Error("HOMESERVER_URL not set.");
-}
-if (!ACCESS_TOKEN) {
-  throw new Error("ACCESS_TOKEN not set.");
-}
+import { default as configTemplate } from "../config.template.json" with { type: "json" };
 
-if (!process.env["ACTIVE_ROOMS"]) {
-  throw new Error();
-}
+Object.keys(configTemplate).forEach((key) => {
+  if (!(key in config)) {
+    throw new Error(`Missing config key: ${key}. See config.template.json.`);
+  }
+});
 
-if (!process.env["STORAGE_PATH"]) {
-  throw new Error();
-}
+const {
+  HOMESERVER_URL,
+  ACCESS_TOKEN,
+  BOOKMARK_STORAGE_PATH,
+  MATRIX_STORAGE_PATH,
+  CRYPTO_STORE_PATH,
+} = config;
 
-const ACTIVE_ROOMS = process.env["ACTIVE_ROOMS"].split(",");
+const ACTIVE_ROOMS = config.ACTIVE_ROOMS.split(",");
 
-const storage = new Storage(process.env["STORAGE_PATH"]);
+const storage = new Storage(BOOKMARK_STORAGE_PATH);
 
 const client = new MatrixClient(
   HOMESERVER_URL,
   ACCESS_TOKEN,
-  new SimpleFsStorageProvider("./.matrix_storage.json"),
-  new RustSdkCryptoStorageProvider("./.crypto_store")
+  new SimpleFsStorageProvider(MATRIX_STORAGE_PATH),
+  new RustSdkCryptoStorageProvider(CRYPTO_STORE_PATH)
 );
 
 client.on(
