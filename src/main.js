@@ -48,32 +48,40 @@ client.on(
         return;
       }
 
-      // Create bookmark
       if (
+        // Create bookmark with message
         event.type === "m.room.message" &&
         event?.content?.body?.startsWith("🔖")
       ) {
-        /** @type {string} */
-        let senderName = event.sender;
-        try {
-          const profile = await client.getUserProfile(event.sender);
-          senderName = profile.displayname;
-        } catch (e) {
-          console.log(`Warning: couldn't get display name for ${event.sender}`);
-        }
+        createBookmark(
+          roomId,
+          event?.event_id,
+          await getDisplayName(event?.sender),
+          event.content.body.replace("🔖", "").trim()
+        );
+      }
 
-        storage.add(roomId, event.event_id, {
-          excerpt: event.content.body.replace("🔖", "").trim(),
-          sender: senderName,
-        });
+      if (
+        // Create bookmark with reaction
+        event.type === "m.reaction" &&
+        event?.content?.["m.relates_to"]?.key === "🔖"
+      ) {
+        console.log(event);
 
-        client.sendEvent(roomId, "m.reaction", {
-          "m.relates_to": {
-            rel_type: "m.annotation",
-            event_id: event.event_id,
-            key: "🆗",
-          },
-        });
+        const originalEventId = event?.content?.["m.relates_to"]?.event_id;
+        /**
+         * @type {Record<string, any>} originalEvent
+         */
+        const originalEvent = () => {
+          try {
+          } catch (e) {
+            console.log(
+              `Warning: couldn't get original event for ${event?.event_id}`
+            );
+          }
+        };
+
+        // createBookmark(roomId, originalEventId);
       }
 
       // Clear bookmark
@@ -114,5 +122,48 @@ client.on(
  */
 const messageUrl = (roomId, eventId) =>
   `https://matrix.to/#/${roomId}/${eventId}`;
+
+/**
+ *
+ * @param {string} roomId
+ * @param {string} eventId
+ * @param {string} author
+ * @param {string} excerpt
+ */
+const createBookmark = async (roomId, eventId, author, excerpt) => {
+  /** @type {string} */
+  try {
+    const profile = await client.getUserProfile(author);
+    author = profile.displayname;
+  } catch (e) {
+    console.log(`Warning: couldn't get display name for ${author}`);
+  }
+
+  storage.add(roomId, eventId, { excerpt });
+
+  client.sendEvent(roomId, "m.reaction", {
+    "m.relates_to": {
+      rel_type: "m.annotation",
+      event_id: eventId,
+      key: "🆗",
+    },
+  });
+};
+
+/**
+ *
+ * @param {string} senderId
+ * @returns {Promise<string>}
+ */
+const getDisplayName = async (senderId) => {
+  try {
+    const profile = await client.getUserProfile(senderId);
+    senderId = profile.displayname;
+  } catch (e) {
+    console.log(`Warning: couldn't get display name for ${senderId}`);
+  }
+
+  return senderId;
+};
 
 client.start();
