@@ -5,3 +5,6 @@ services:
       NODE_ENV: production
     volumes:
       - ./config.json:/app/config.json
+      - store:/app/store
+volumes:
+  store:
