@@ -37,5 +37,5 @@ pull:
 # Pull, build, and deploy all services
 deploy:
     -git pull
-    @just pull
+    @just build
     @just up
