@@ -10,6 +10,9 @@ import { Storage } from "./Storage.js";
 
 import { default as configTemplate } from "../config.template.json" with { type: "json" };
 
+// sigh...
+/** @typedef {Record<string, any>} Event */
+
 Object.keys(configTemplate).forEach((key) => {
   if (!(key in config)) {
     throw new Error(`Missing config key: ${key}. See config.template.json.`);
@@ -40,7 +43,7 @@ client.on(
   /**
    *
    * @param {string} roomId
-   * @param {Record<string, any>} event
+   * @param {Event} event
    */
   async (roomId, event) => {
     try {
@@ -48,32 +51,44 @@ client.on(
         return;
       }
 
-      // Create bookmark
       if (
+        // Create bookmark with message
         event.type === "m.room.message" &&
         event?.content?.body?.startsWith("🔖")
       ) {
+        createBookmark(
+          roomId,
+          event?.event_id,
+          event.content.body.replace("🔖", "").trim()
+        );
+      }
+
+      if (
+        // Create bookmark with reaction
+        event.type === "m.reaction" &&
+        event?.content?.["m.relates_to"]?.key === "🔖"
+      ) {
+        const originalEventId = event?.content?.["m.relates_to"]?.event_id;
         /** @type {string} */
-        let senderName = event.sender;
-        try {
-          const profile = await client.getUserProfile(event.sender);
-          senderName = profile.displayname;
-        } catch (e) {
-          console.log(`Warning: couldn't get display name for ${event.sender}`);
-        }
+        const excerpt = await (async () => {
+          try {
+            /** @type {Event} */
+            const originalEvent = await client.getEvent(
+              roomId,
+              originalEventId
+            );
+            console.log(originalEvent);
+            return originalEvent?.content?.body;
+          } catch (e) {
+            console.log(
+              `Warning: couldn't get original event ${originalEventId}`
+            );
+            console.log(e);
+            return "";
+          }
+        })();
 
-        storage.add(roomId, event.event_id, {
-          excerpt: event.content.body.replace("🔖", "").trim(),
-          sender: senderName,
-        });
-
-        client.sendEvent(roomId, "m.reaction", {
-          "m.relates_to": {
-            rel_type: "m.annotation",
-            event_id: event.event_id,
-            key: "🆗",
-          },
-        });
+        createBookmark(roomId, originalEventId, excerpt || "");
       }
 
       // Clear bookmark
@@ -90,14 +105,14 @@ client.on(
         client.sendHtmlText(
           roomId,
           bookmarks.length !== 0
-            ? `<b>📚️ Current bookmarks 📚️</b><br/><ul>
+            ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
         ${bookmarks
           .map(
             ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} 👉️${messageUrl(room_id, event_id)}</li>`
+              `<li>${excerpt} ${messageUrl(room_id, event_id)}</li>`
           )
           .join("\n")}
-        </ul>`
+        </ol>`
             : `There are no bookmarks! :3`
         );
       }
@@ -114,5 +129,39 @@ client.on(
  */
 const messageUrl = (roomId, eventId) =>
   `https://matrix.to/#/${roomId}/${eventId}`;
+
+/**
+ *
+ * @param {string} roomId
+ * @param {string} eventId
+ * @param {string} excerpt
+ */
+const createBookmark = async (roomId, eventId, excerpt) => {
+  storage.add(roomId, eventId, { excerpt });
+
+  client.sendEvent(roomId, "m.reaction", {
+    "m.relates_to": {
+      rel_type: "m.annotation",
+      event_id: eventId,
+      key: "🆗",
+    },
+  });
+};
+
+/**
+ *
+ * @param {string} senderId
+ * @returns {Promise<string>}
+ */
+const getDisplayName = async (senderId) => {
+  try {
+    const profile = await client.getUserProfile(senderId);
+    senderId = profile.displayname;
+  } catch (e) {
+    console.log(`Warning: couldn't get display name for ${senderId}`);
+  }
+
+  return senderId;
+};
 
 client.start();
