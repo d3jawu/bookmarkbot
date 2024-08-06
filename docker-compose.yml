@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ./config.json:/app/config.json

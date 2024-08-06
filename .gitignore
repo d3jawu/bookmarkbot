@@ -7,3 +7,5 @@ bookmarks.json
 config.json
 
 node_modules/
+# Alternative package managers
+pnpm-lock.yaml
