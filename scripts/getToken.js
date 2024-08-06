@@ -7,10 +7,7 @@ import { MatrixAuth } from "matrix-bot-sdk";
 const homeserverUrl = config.HOMESERVER_URL;
 
 const auth = new MatrixAuth(homeserverUrl);
-const client = await auth.passwordLogin(
-  "@dejawu:matrix.tech-bloc-sea.dev",
-  "J*KeJLt7QWgTnh@gDfSb"
-);
+const client = await auth.passwordLogin("", "");
 
 console.log(
   "Copy this access token to your bot's config: ",

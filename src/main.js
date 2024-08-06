@@ -10,6 +10,9 @@ import { Storage } from "./Storage.js";
 
 import { default as configTemplate } from "../config.template.json" with { type: "json" };
 
+// sigh...
+/** @typedef {Record<string, any>} Event */
+
 Object.keys(configTemplate).forEach((key) => {
   if (!(key in config)) {
     throw new Error(`Missing config key: ${key}. See config.template.json.`);
@@ -40,7 +43,7 @@ client.on(
   /**
    *
    * @param {string} roomId
-   * @param {Record<string, any>} event
+   * @param {Event} event
    */
   async (roomId, event) => {
     try {
@@ -56,7 +59,6 @@ client.on(
         createBookmark(
           roomId,
           event?.event_id,
-          await getDisplayName(event?.sender),
           event.content.body.replace("🔖", "").trim()
         );
       }
@@ -66,22 +68,27 @@ client.on(
         event.type === "m.reaction" &&
         event?.content?.["m.relates_to"]?.key === "🔖"
       ) {
-        console.log(event);
-
         const originalEventId = event?.content?.["m.relates_to"]?.event_id;
-        /**
-         * @type {Record<string, any>} originalEvent
-         */
-        const originalEvent = () => {
+        /** @type {string} */
+        const excerpt = await (async () => {
           try {
+            /** @type {Event} */
+            const originalEvent = await client.getEvent(
+              roomId,
+              originalEventId
+            );
+            console.log(originalEvent);
+            return originalEvent?.content?.body;
           } catch (e) {
             console.log(
-              `Warning: couldn't get original event for ${event?.event_id}`
+              `Warning: couldn't get original event ${originalEventId}`
             );
+            console.log(e);
+            return "";
           }
-        };
+        })();
 
-        // createBookmark(roomId, originalEventId);
+        createBookmark(roomId, originalEventId, excerpt || "");
       }
 
       // Clear bookmark
@@ -98,14 +105,14 @@ client.on(
         client.sendHtmlText(
           roomId,
           bookmarks.length !== 0
-            ? `<b>📚️ Current bookmarks 📚️</b><br/><ul>
+            ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
         ${bookmarks
           .map(
             ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} 👉️${messageUrl(room_id, event_id)}</li>`
+              `<li>${excerpt} ${messageUrl(room_id, event_id)}</li>`
           )
           .join("\n")}
-        </ul>`
+        </ol>`
             : `There are no bookmarks! :3`
         );
       }
@@ -127,18 +134,9 @@ const messageUrl = (roomId, eventId) =>
  *
  * @param {string} roomId
  * @param {string} eventId
- * @param {string} author
  * @param {string} excerpt
  */
-const createBookmark = async (roomId, eventId, author, excerpt) => {
-  /** @type {string} */
-  try {
-    const profile = await client.getUserProfile(author);
-    author = profile.displayname;
-  } catch (e) {
-    console.log(`Warning: couldn't get display name for ${author}`);
-  }
-
+const createBookmark = async (roomId, eventId, excerpt) => {
   storage.add(roomId, eventId, { excerpt });
 
   client.sendEvent(roomId, "m.reaction", {
