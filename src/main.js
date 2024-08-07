@@ -94,14 +94,25 @@ client.on(
       // Clear bookmark
       if (
         event.type === "m.reaction" &&
-        ["☑️", "✅", "✔️"].includes(event?.content?.["m.relates_to"]?.key)
+        // The two identical-looking checkmarks are actually different!
+        // The second one contains a variation selector: https://en.wikipedia.org/wiki/Variation_Selectors_(Unicode_block)
+        // If you step over it with the arrow keys, you'll notice it's two characters wide.
+        ["☑️", "✔️", "✅", "✅️"].includes(
+          event?.content?.["m.relates_to"]?.key
+        )
       ) {
+        console.log(
+          `Clearing bookmark by reaction: ${roomId}:${event?.content?.["m.relates_to"]?.event_id}`
+        );
         storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
       }
 
       // List bookmarks
       if (event.type === "m.room.message" && event?.content?.body === "📑") {
         const bookmarks = storage.list();
+        console.log(
+          `Listing bookmarks:\n${bookmarks.map(({ room_id, event_id, excerpt }) => `- ${room_id}:${event_id} - ${excerpt}\n`)}`
+        );
         client.sendHtmlText(
           roomId,
           bookmarks.length !== 0
@@ -137,6 +148,7 @@ const messageUrl = (roomId, eventId) =>
  * @param {string} excerpt
  */
 const createBookmark = async (roomId, eventId, excerpt) => {
+  console.log(`Creating bookmark: ${roomId}:${eventId} - ${excerpt}`);
   storage.add(roomId, eventId, { excerpt });
 
   client.sendEvent(roomId, "m.reaction", {
@@ -153,15 +165,20 @@ const createBookmark = async (roomId, eventId, excerpt) => {
  * @param {string} senderId
  * @returns {Promise<string>}
  */
-const getDisplayName = async (senderId) => {
-  try {
-    const profile = await client.getUserProfile(senderId);
-    senderId = profile.displayname;
-  } catch (e) {
-    console.log(`Warning: couldn't get display name for ${senderId}`);
-  }
+// const getDisplayName = async (senderId) => {
+//   try {
+//     const profile = await client.getUserProfile(senderId);
+//     senderId = profile.displayname;
+//   } catch (e) {
+//     console.log(`Warning: couldn't get display name for ${senderId}`);
+//   }
 
-  return senderId;
-};
+//   return senderId;
+// };
 
-client.start();
+try {
+  client.start();
+} catch (e) {
+  console.log("Client encountered error:");
+  console.log(e);
+}
