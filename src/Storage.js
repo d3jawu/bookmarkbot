@@ -62,11 +62,16 @@ export class Storage {
   /**
    * @param {string} roomId
    * @param {string} eventId
+   * @returns {boolean}
    */
   clear(roomId, eventId) {
-    if (bookmarkKey(roomId, eventId) in this.data) {
-      delete this.data[bookmarkKey(roomId, eventId)];
+    if (!(bookmarkKey(roomId, eventId) in this.data)) {
+      return false;
     }
+
+    delete this.data[bookmarkKey(roomId, eventId)];
     writeFileSync(this.path, JSON.stringify(this.data));
+
+    return true;
   }
 }

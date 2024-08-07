@@ -29,6 +29,8 @@ const {
 
 const ACTIVE_ROOMS = config.ACTIVE_ROOMS.split(",");
 
+const CHECKMARKS = ["☑️", "✔️", "✅", "✅️"];
+
 const storage = new Storage(BOOKMARK_STORAGE_PATH);
 
 const client = new MatrixClient(
@@ -91,15 +93,13 @@ client.on(
         createBookmark(roomId, originalEventId, excerpt || "");
       }
 
-      // Clear bookmark
+      // Clear bookmark by reaction
       if (
         event.type === "m.reaction" &&
         // The two identical-looking checkmarks are actually different!
         // The second one contains a variation selector: https://en.wikipedia.org/wiki/Variation_Selectors_(Unicode_block)
         // If you step over it with the arrow keys, you'll notice it's two characters wide.
-        ["☑️", "✔️", "✅", "✅️"].includes(
-          event?.content?.["m.relates_to"]?.key
-        )
+        CHECKMARKS.includes(event?.content?.["m.relates_to"]?.key)
       ) {
         console.log(
           `Clearing bookmark by reaction: ${roomId}:${event?.content?.["m.relates_to"]?.event_id}`
@@ -107,8 +107,42 @@ client.on(
         storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
       }
 
-      // List bookmarks
+      // Clear bookmark by message
+      if (
+        event.type === "m.room.message" &&
+        CHECKMARKS.includes(event?.content?.body?.[0])
+      ) {
+        const index = event?.content?.body?.split(" ")[1];
+        const bookmarks = storage.list();
+
+        console.log(bookmarks.length);
+
+        if (!index || isNaN(index) || index < 1 || index > bookmarks.length) {
+          console.log(`Warning: Invalid bookmark index to clear: ${index}`);
+          client.sendEvent(roomId, "m.reaction", {
+            "m.relates_to": {
+              rel_type: "m.annotation",
+              event_id: event?.event_id,
+              key: "❌️",
+            },
+          });
+          return;
+        }
+
+        console.log(`Clearing bookmark by message: ${roomId}; #${index}`);
+        storage.clear(roomId, bookmarks[index - 1]?.event_id || "");
+
+        client.sendEvent(roomId, "m.reaction", {
+          "m.relates_to": {
+            rel_type: "m.annotation",
+            event_id: event?.event_id,
+            key: "🆗",
+          },
+        });
+      }
+
       if (event.type === "m.room.message" && event?.content?.body === "📑") {
+        // List bookmarks
         const bookmarks = storage.list();
         console.log(
           `Listing bookmarks:\n${bookmarks.map(({ room_id, event_id, excerpt }) => `- ${room_id}:${event_id} - ${excerpt}\n`)}`
