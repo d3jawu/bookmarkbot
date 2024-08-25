@@ -6,5 +6,6 @@ services:
     volumes:
       - ./config.json:/app/config.json
       - store:/app/store
+    restart: on-failure
 volumes:
   store:
