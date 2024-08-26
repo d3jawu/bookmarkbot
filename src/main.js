@@ -78,8 +78,6 @@ client.on(
         event?.content?.body?.startsWith("🔖")
       ) {
         console.log("Creating bookmark by message");
-        console.log(event);
-        console.log(event?.event_id);
         createBookmark(
           store,
           roomId,
@@ -113,6 +111,7 @@ client.on(
           }
         })();
 
+        console.log("Creating bookmark by reaction");
         createBookmark(store, roomId, originalEventId, excerpt || "");
       }
 
@@ -138,8 +137,6 @@ client.on(
         const index = event?.content?.body?.split(" ")[1];
         const bookmarks = store.list();
 
-        console.log(bookmarks.length);
-
         if (!index || isNaN(index) || index < 1 || index > bookmarks.length) {
           console.log(`Warning: Invalid bookmark index to clear: ${index}`);
           client.sendEvent(roomId, "m.reaction", {
@@ -153,10 +150,6 @@ client.on(
         }
 
         console.log(`Clearing bookmark by message: ${roomId}; #${index}`);
-        console.log(bookmarks);
-        console.log(bookmarks[index - 1]?.event_id);
-        store.clear(bookmarks[index - 1]?.event_id || "");
-
         client.sendEvent(roomId, "m.reaction", {
           "m.relates_to": {
             rel_type: "m.annotation",
