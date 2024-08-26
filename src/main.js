@@ -113,7 +113,7 @@ client.on(
         CHECKMARKS.includes(event?.content?.body?.[0])
       ) {
         const index = event?.content?.body?.split(" ")[1];
-        const bookmarks = storage.list();
+        const bookmarks = storage.list(roomId);
 
         console.log(bookmarks.length);
 
@@ -143,18 +143,17 @@ client.on(
 
       if (event.type === "m.room.message" && event?.content?.body === "📑") {
         // List bookmarks
-        const bookmarks = storage.list();
-        console.log(
-          `Listing bookmarks:\n${bookmarks.map(({ room_id, event_id, excerpt }) => `- ${room_id}:${event_id} - ${excerpt}\n`)}`
-        );
+        const bookmarks = storage.list(roomId);
+        console.log(`Listing bookmarks:`);
+        console.log(bookmarks);
         client.sendHtmlText(
           roomId,
           bookmarks.length !== 0
             ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
         ${bookmarks
           .map(
-            ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} ${messageUrl(room_id, event_id)}</li>`
+            ({ excerpt, event_id }) =>
+              `<li>${excerpt} ${messageUrl(roomId, event_id)}</li>`
           )
           .join("\n")}
         </ol>`
