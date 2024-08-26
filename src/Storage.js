@@ -3,13 +3,6 @@
 
 import { readFileSync, writeFileSync, statSync, existsSync } from "fs";
 
-/**
- * @param {string} roomId
- * @param {string} eventId
- * @returns {string}
- */
-const bookmarkKey = (roomId, eventId) => `${roomId}|${eventId}`;
-
 // Yes, this reads and writes the entire file to disk with every interaction. It's fine, it's fine
 export class Storage {
   /** @type {string} */
@@ -26,6 +19,7 @@ export class Storage {
   constructor(path) {
     this.path = path;
     if (!existsSync(path)) {
+      console.log(`Created store at ${path}.`);
       writeFileSync(path, "{}");
     }
 
@@ -34,12 +28,11 @@ export class Storage {
 
   // Add a bookmark to storage.
   /**
-   * @param {string} roomId
    * @param {string} eventId
    * @param {Bookmark} bookmark
    */
-  add(roomId, eventId, bookmark) {
-    this.data[bookmarkKey(roomId, eventId)] = bookmark;
+  add(eventId, bookmark) {
+    this.data[eventId] = bookmark;
     writeFileSync(this.path, JSON.stringify(this.data));
   }
 
@@ -47,29 +40,26 @@ export class Storage {
   /**
    * @returns {(Bookmark & {
    *   event_id: string
-   *   room_id: string
    * })[]}
    */
   list() {
     return Object.entries(this.data).map(([key, bookmark]) => ({
-      room_id: key.split("|")[0] || "",
-      event_id: key.split("|")[1] || "",
+      event_id: key,
       ...bookmark,
     }));
   }
 
   // Clear a bookmark (mark it as done and remove it from the list)
   /**
-   * @param {string} roomId
    * @param {string} eventId
    * @returns {boolean}
    */
-  clear(roomId, eventId) {
-    if (!(bookmarkKey(roomId, eventId) in this.data)) {
+  clear(eventId) {
+    if (!(eventId in this.data)) {
       return false;
     }
 
-    delete this.data[bookmarkKey(roomId, eventId)];
+    delete this.data[eventId];
     writeFileSync(this.path, JSON.stringify(this.data));
 
     return true;

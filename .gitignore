@@ -2,6 +2,7 @@
 .matrix_storage.json
 .crypto_store/
 bookmarks.json
+stores/
 
 # Environment
 config.json

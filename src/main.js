@@ -10,9 +10,10 @@ import { Storage } from "./Storage.js";
 
 import { default as configTemplate } from "../config.template.json" with { type: "json" };
 
+import { join as joinPath } from "path";
+
 // sigh...
 /** @typedef {Record<string, any>} Event */
-
 Object.keys(configTemplate).forEach((key) => {
   if (!(key in config)) {
     throw new Error(`Missing config key: ${key}. See config.template.json.`);
@@ -31,7 +32,17 @@ const ACTIVE_ROOMS = config.ACTIVE_ROOMS.split(",");
 
 const CHECKMARKS = ["☑️", "✔️", "✅", "✅️"];
 
-const storage = new Storage(BOOKMARK_STORAGE_PATH);
+/** @type {Record<string, Storage>} */
+const stores = ACTIVE_ROOMS.reduce(
+  (result, roomId) => ({
+    ...result,
+    [roomId]: new Storage(joinPath(BOOKMARK_STORAGE_PATH, `${roomId}.json`)),
+  }),
+  {}
+);
+
+console.log("Loaded stores:");
+console.log(stores);
 
 const client = new MatrixClient(
   HOMESERVER_URL,
@@ -53,12 +64,24 @@ client.on(
         return;
       }
 
+      const store = stores[roomId];
+      if (!store) {
+        console.log(`Missing store for ${roomId}.`);
+        console.log("Existing stores:");
+        console.log(stores);
+        return;
+      }
+
       if (
         // Create bookmark with message
         event.type === "m.room.message" &&
         event?.content?.body?.startsWith("🔖")
       ) {
+        console.log("Creating bookmark by message");
+        console.log(event);
+        console.log(event?.event_id);
         createBookmark(
+          store,
           roomId,
           event?.event_id,
           event.content.body.replace("🔖", "").trim()
@@ -90,7 +113,7 @@ client.on(
           }
         })();
 
-        createBookmark(roomId, originalEventId, excerpt || "");
+        createBookmark(store, roomId, originalEventId, excerpt || "");
       }
 
       // Clear bookmark by reaction
@@ -104,7 +127,7 @@ client.on(
         console.log(
           `Clearing bookmark by reaction: ${roomId}:${event?.content?.["m.relates_to"]?.event_id}`
         );
-        storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
+        store.clear(event?.content?.["m.relates_to"]?.event_id);
       }
 
       // Clear bookmark by message
@@ -113,7 +136,7 @@ client.on(
         CHECKMARKS.includes(event?.content?.body?.[0])
       ) {
         const index = event?.content?.body?.split(" ")[1];
-        const bookmarks = storage.list();
+        const bookmarks = store.list();
 
         console.log(bookmarks.length);
 
@@ -130,7 +153,9 @@ client.on(
         }
 
         console.log(`Clearing bookmark by message: ${roomId}; #${index}`);
-        storage.clear(roomId, bookmarks[index - 1]?.event_id || "");
+        console.log(bookmarks);
+        console.log(bookmarks[index - 1]?.event_id);
+        store.clear(bookmarks[index - 1]?.event_id || "");
 
         client.sendEvent(roomId, "m.reaction", {
           "m.relates_to": {
@@ -143,18 +168,17 @@ client.on(
 
       if (event.type === "m.room.message" && event?.content?.body === "📑") {
         // List bookmarks
-        const bookmarks = storage.list();
-        console.log(
-          `Listing bookmarks:\n${bookmarks.map(({ room_id, event_id, excerpt }) => `- ${room_id}:${event_id} - ${excerpt}\n`)}`
-        );
+        const bookmarks = store.list();
+        console.log(`Listing bookmarks:`);
+        console.log(bookmarks);
         client.sendHtmlText(
           roomId,
           bookmarks.length !== 0
             ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
         ${bookmarks
           .map(
-            ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} ${messageUrl(room_id, event_id)}</li>`
+            ({ excerpt, event_id }) =>
+              `<li>${excerpt} ${messageUrl(roomId, event_id)}</li>`
           )
           .join("\n")}
         </ol>`
@@ -176,14 +200,14 @@ const messageUrl = (roomId, eventId) =>
   `https://matrix.to/#/${roomId}/${eventId}`;
 
 /**
- *
+ * @param {Storage} store
  * @param {string} roomId
  * @param {string} eventId
  * @param {string} excerpt
  */
-const createBookmark = async (roomId, eventId, excerpt) => {
-  console.log(`Creating bookmark: ${roomId}:${eventId} - ${excerpt}`);
-  storage.add(roomId, eventId, { excerpt });
+const createBookmark = async (store, roomId, eventId, excerpt) => {
+  console.log(`Creating bookmark in ${roomId}:${eventId} - ${excerpt}`);
+  store.add(eventId, { excerpt });
 
   client.sendEvent(roomId, "m.reaction", {
     "m.relates_to": {
