@@ -105,6 +105,7 @@ client.on(
           `Clearing bookmark by reaction: ${roomId}:${event?.content?.["m.relates_to"]?.event_id}`
         );
         storage.clear(roomId, event?.content?.["m.relates_to"]?.event_id);
+        listBookmarks(roomId);
       }
 
       // Clear bookmark by message
@@ -113,7 +114,7 @@ client.on(
         CHECKMARKS.includes(event?.content?.body?.[0])
       ) {
         const index = event?.content?.body?.split(" ")[1];
-        const bookmarks = storage.list();
+        const bookmarks = storage.list(roomId);
 
         console.log(bookmarks.length);
 
@@ -139,27 +140,12 @@ client.on(
             key: "🆗",
           },
         });
+        listBookmarks(roomId);
       }
 
       if (event.type === "m.room.message" && event?.content?.body === "📑") {
         // List bookmarks
-        const bookmarks = storage.list();
-        console.log(
-          `Listing bookmarks:\n${bookmarks.map(({ room_id, event_id, excerpt }) => `- ${room_id}:${event_id} - ${excerpt}\n`)}`
-        );
-        client.sendHtmlText(
-          roomId,
-          bookmarks.length !== 0
-            ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
-        ${bookmarks
-          .map(
-            ({ excerpt, room_id, event_id }) =>
-              `<li>${excerpt} ${messageUrl(room_id, event_id)}</li>`
-          )
-          .join("\n")}
-        </ol>`
-            : `There are no bookmarks! :3`
-        );
+        listBookmarks(roomId);
       }
     } catch (e) {
       console.log(e);
@@ -195,20 +181,26 @@ const createBookmark = async (roomId, eventId, excerpt) => {
 };
 
 /**
- *
- * @param {string} senderId
- * @returns {Promise<string>}
+ * @param {string} roomId
  */
-// const getDisplayName = async (senderId) => {
-//   try {
-//     const profile = await client.getUserProfile(senderId);
-//     senderId = profile.displayname;
-//   } catch (e) {
-//     console.log(`Warning: couldn't get display name for ${senderId}`);
-//   }
-
-//   return senderId;
-// };
+function listBookmarks(roomId) {
+  const bookmarks = storage.list(roomId);
+  console.log(`Listing bookmarks:`);
+  console.log(bookmarks);
+  client.sendHtmlText(
+    roomId,
+    bookmarks.length !== 0
+      ? `<b>📚️ Current bookmarks 📚️</b><br/><ol>
+        ${bookmarks
+          .map(
+            ({ excerpt, event_id }) =>
+              `<li>${excerpt} ${messageUrl(roomId, event_id)}</li>`
+          )
+          .join("\n")}
+        </ol>`
+      : `There are no bookmarks! :3`
+  );
+}
 
 try {
   client.start();
