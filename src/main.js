@@ -122,12 +122,6 @@ client.on(
         const bookmarks = storage.list(roomId);
 
 
-        console.log(
-          body
-            .split(",")
-            .map((iStr) => iStr.replace(/[^0-9]/g, ""))
-            .map((iStr) => parseInt(iStr))
-        );
 
         body
           .split(",")
