@@ -121,7 +121,6 @@ client.on(
 
         const bookmarks = storage.list(roomId);
 
-        console.log(body);
 
         console.log(
           body
