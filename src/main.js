@@ -29,7 +29,7 @@ const {
 
 const ACTIVE_ROOMS = config.ACTIVE_ROOMS.split(",");
 
-const CHECKMARKS = ["☑️", "✔️", "✅", "✅️"];
+const CHECKMARKS = ["☑️", "✔️", "✅️", "✅"];
 
 const storage = new Storage(BOOKMARK_STORAGE_PATH);
 
@@ -113,25 +113,50 @@ client.on(
         event.type === "m.room.message" &&
         CHECKMARKS.includes(event?.content?.body?.[0])
       ) {
-        const index = event?.content?.body?.split(" ")[1];
+        /** @type {string} */
+        const body = CHECKMARKS.reduce(
+          (body, checkmark) => body.replace(checkmark, ""),
+          event?.content?.body || ""
+        );
+
         const bookmarks = storage.list(roomId);
 
-        console.log(bookmarks.length);
+        console.log(body);
 
-        if (!index || isNaN(index) || index < 1 || index > bookmarks.length) {
-          console.log(`Warning: Invalid bookmark index to clear: ${index}`);
-          client.sendEvent(roomId, "m.reaction", {
-            "m.relates_to": {
-              rel_type: "m.annotation",
-              event_id: event?.event_id,
-              key: "❌️",
-            },
+        console.log(
+          body
+            .split(",")
+            .map((iStr) => iStr.replace(/[^0-9]/g, ""))
+            .map((iStr) => parseInt(iStr))
+        );
+
+        body
+          .split(",")
+          .map((iStr) => iStr.replace(/[^0-9]/g, ""))
+          .map((iStr) => parseInt(iStr))
+          .map((index) => {
+            if (
+              !index ||
+              isNaN(index) ||
+              index < 1 ||
+              index > bookmarks.length
+            ) {
+              client.sendEvent(roomId, "m.reaction", {
+                "m.relates_to": {
+                  rel_type: "m.annotation",
+                  event_id: event?.event_id,
+                  key: "❌️",
+                },
+              });
+              throw new Error(`Invalid bookmark index to clear: ${index}`);
+            }
+
+            return index;
+          })
+          .forEach((index) => {
+            console.log(`Clearing bookmark by message: ${roomId}; #${index}`);
+            storage.clear(roomId, bookmarks[index - 1]?.event_id || "");
           });
-          return;
-        }
-
-        console.log(`Clearing bookmark by message: ${roomId}; #${index}`);
-        storage.clear(roomId, bookmarks[index - 1]?.event_id || "");
 
         client.sendEvent(roomId, "m.reaction", {
           "m.relates_to": {
