@@ -51,6 +51,8 @@ client.on(
    */
   async (roomId, event) => {
     try {
+      await client.setPresenceStatus("unavailable");
+
       if (!ACTIVE_ROOMS.includes(roomId)) {
         return;
       }
