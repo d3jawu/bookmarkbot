@@ -40,7 +40,7 @@ const client = new MatrixClient(
   new RustSdkCryptoStorageProvider(CRYPTO_STORE_PATH)
 );
 
-client.syncingPresence = "offline";
+await client.setPresenceStatus("unavailable");
 
 client.on(
   "room.event",
