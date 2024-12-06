@@ -6,10 +6,21 @@ import { MatrixAuth } from "matrix-bot-sdk";
 // captcha or terms of service (public servers typically won't work).
 const homeserverUrl = config.HOMESERVER_URL;
 
-const auth = new MatrixAuth(homeserverUrl);
-const client = await auth.passwordLogin("", "");
+const args = process.argv.slice(2);
+if (args.length !== 2) {
+  console.error("Usage: node getToken.js <username> <password>");
+  process.exit(1);
+}
 
+const username = args[0];
+const password = args[1];
+
+const auth = new MatrixAuth(homeserverUrl);
+const client = await auth.passwordLogin(username, password);
+
+console.log("=".repeat(20));
 console.log(
   "Copy this access token to your bot's config: ",
-  client.accessToken
+  client.accessToken,
 );
+console.log("=".repeat(20));
