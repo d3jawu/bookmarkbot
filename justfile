@@ -4,7 +4,7 @@ set dotenv-load := false
 
 
 default:
-    @just -lu
+    @just -ul
 
 # Create the config file if it doesn't exist
 config:
@@ -13,6 +13,10 @@ config:
 # Build all containers
 build:
 	{{ DC }} build
+
+# Generate a token for the user
+generate-token username password:
+    just run node scripts/getToken.js {{ username }} {{ password }}
 
 # Spin up all (or the specified) services
 up service="": config
