@@ -160,7 +160,7 @@ client.on(
         listBookmarks(roomId);
       }
 
-      if (event.type === "m.room.message" && event?.content?.body === "📑") {
+      if (event.type === "m.room.message" && event?.content?.body?.startsWith("📑")) {
         // List bookmarks
         listBookmarks(roomId);
       }
