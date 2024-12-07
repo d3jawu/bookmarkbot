@@ -53,8 +53,8 @@ client.on(
         return;
       }
 
+      // Create bookmark with message
       if (
-        // Create bookmark with message
         event.type === "m.room.message" &&
         event?.content?.body?.startsWith("🔖")
       ) {
@@ -65,8 +65,8 @@ client.on(
         );
       }
 
+      // Create bookmark with reaction
       if (
-        // Create bookmark with reaction
         event.type === "m.reaction" &&
         event?.content?.["m.relates_to"]?.key === "🔖"
       ) {
@@ -160,8 +160,8 @@ client.on(
         listBookmarks(roomId);
       }
 
-      if (event.type === "m.room.message" && event?.content?.body === "📑") {
-        // List bookmarks
+      // List bookmarks
+      if (event.type === "m.room.message" && event?.content?.body?.startsWith("📑")) {
         listBookmarks(roomId);
       }
     } catch (e) {
