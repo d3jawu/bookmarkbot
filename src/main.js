@@ -1,9 +1,9 @@
 import { default as config } from "../config.json" with { type: "json" };
 
-import { Storage } from "./Storage.js";
 import { Host } from "./Host.js";
 
 import { default as configTemplate } from "../config.template.json" with { type: "json" };
+import { join as joinPath } from "path";
 
 // sigh...
 /** @typedef {Record<string, any>} Event */
@@ -16,9 +16,7 @@ Object.keys(configTemplate).forEach((key) => {
 
 // Settings that are consistent across users
 const { HOSTS } = config;
-const STORE_PATH = "../store/";
-
-// const ACTIVE_ROOMS = config.ACTIVE_ROOMS.split(",");
+const STORE_PATH = joinPath(process.cwd(), "store");
 
 HOSTS.forEach((hostConfig) => {
   const host = new Host(hostConfig, STORE_PATH);
