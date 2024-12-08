@@ -14,3 +14,12 @@ A bot for managing bookmarks on Matrix/Element.
    1. Open the "Sessions" settings in the Element App
    2. Verify the session for the bot (it will show up with a red warning and be a series of letters in all caps)
    3. Restart the bot
+
+## Dump
+Previous storage info:
+
+```json
+  "STORAGE_PATH": "./store/bookmarks.json",
+  "MATRIX_STORAGE_PATH": "./store/.matrix_storage.json",
+  "CRYPTO_STORE_PATH": "./store/.crypto_store"
+```
