@@ -5,6 +5,8 @@ services:
       NODE_ENV: production
     volumes:
       - ./config.json:/app/config.json
+      - ./src:/app/src
+      - ./scripts:/app/scripts
       - store:/app/store
     restart: on-failure
 volumes:

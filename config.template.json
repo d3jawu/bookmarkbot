@@ -1,8 +1,10 @@
 {
   "HOMESERVER_URL": "Matrix home server URL (e.g. https://matrix.org)",
-  "ACCESS_TOKEN": "Access token, obtained from scripts/getToken.js (see README.md)",
-  "ACTIVE_ROOMS": "Comma-separated list of room ids (e.g. !abc:matrix.org,!def:matrix.org)",
-  "BOOKMARK_STORAGE_PATH": "Path to JSON file for bookmarks (e.g. ./store/bookmarks.json)",
-  "MATRIX_STORAGE_PATH": "Path to JSON file used for Matrix bot metadata (e.g. ./store/matrix_storage.json)",
-  "CRYPTO_STORE_PATH": "Path to directory used for Matrix cryptography metadata (e.g. ./store/crypto_store)"
+  "HOSTS": [
+    {
+      "HOST_PATH": "Name of the directory for this host's data, primarily for internal management",
+      "ACCESS_TOKEN": "Access token, obtained from scripts/getToken.js (see README.md)",
+      "ACTIVE_ROOMS": "Comma-separated list of room ids (e.g. !abc:matrix.org,!def:matrix.org)"
+    }
+  ]
 }
