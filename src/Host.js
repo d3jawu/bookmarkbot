@@ -21,7 +21,9 @@ function messageUrl(roomId, eventId) {
   return `https://matrix.to/#/${roomId}/${eventId}`;
 }
 
-const CHECKMARKS = ["☑️", "✔️", "✅️", "✅"];
+const SILENT_CHECKMARKS = ["☑️", "✔️"];
+const LOUD_CHECKMARKS = ["✅️", "✅"];
+const CHECKMARKS = [...SILENT_CHECKMARKS, ...LOUD_CHECKMARKS];
 
 export class Host {
   /**
@@ -114,7 +116,22 @@ export class Host {
               roomId,
               event?.content?.["m.relates_to"]?.event_id,
             );
-            this.listBookmarks(roomId);
+            
+            // Silent check or loud check
+            const checkmark = event?.content?.["m.relates_to"]?.key;
+            if (SILENT_CHECKMARKS.includes(checkmark)) {
+              // Add 🆓 emoji for silent check
+              this.client.sendEvent(roomId, "m.reaction", {
+                "m.relates_to": {
+                  rel_type: "m.annotation",
+                  event_id: event?.content?.["m.relates_to"]?.event_id,
+                  key: "🆓",
+                },
+              });
+            } else {
+              // List bookmarks for loud check
+              this.listBookmarks(roomId);
+            }
           }
 
           // Clear bookmark by message
@@ -122,6 +139,7 @@ export class Host {
             event.type === "m.room.message" &&
             CHECKMARKS.includes(event?.content?.body?.[0])
           ) {
+            
             /** @type {string} */
             const body = CHECKMARKS.reduce(
               (body, checkmark) => body.replace(checkmark, ""),
@@ -163,14 +181,21 @@ export class Host {
                 );
               });
 
+            let emojiKey;
+            if (SILENT_CHECKMARKS.includes(event?.content?.body?.[0])) {
+              emojiKey = "🆓";
+            } else {
+              this.listBookmarks(roomId);
+              emojiKey = "🆗";
+            }
+
             this.client.sendEvent(roomId, "m.reaction", {
               "m.relates_to": {
                 rel_type: "m.annotation",
                 event_id: event?.event_id,
-                key: "🆗",
+                key: emojiKey,
               },
             });
-            this.listBookmarks(roomId);
           }
 
           // List bookmarks
