@@ -21,7 +21,7 @@ function messageUrl(roomId, eventId) {
   return `https://matrix.to/#/${roomId}/${eventId}`;
 }
 
-const SILENT_CHECKMARKS = ["☑️", "✔️"];
+const SILENT_CHECKMARKS = ["☑️", "☑", "✔️", "✔", "✓"];
 const LOUD_CHECKMARKS = ["✅️", "✅"];
 const CHECKMARKS = [...SILENT_CHECKMARKS, ...LOUD_CHECKMARKS];
 
